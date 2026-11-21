@@ -221,7 +221,7 @@ fun RecipeCard(r: Recipe, rank: Int = 0, onShop: (() -> Unit)? = null, onClick: 
                 }
                 if (r.missing.isNotEmpty()) {
                     Spacer(Modifier.height(6.dp))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         r.missing.take(4).forEach { m ->
                             Text(m, style = MaterialTheme.typography.labelSmall, color = Palette.Coral,
                                 modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Palette.Coral.copy(alpha = 0.12f)).padding(horizontal = 8.dp, vertical = 3.dp))

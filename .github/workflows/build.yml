@@ -56,6 +56,27 @@ jobs:
             git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" sc-signing
           fi
 
+      - name: Test AI keys
+        env:
+          AK: ${{ secrets.SC_AVAL_KEY || secrets.SL_AVAL_KEY }}
+          AM: ${{ secrets.SC_AVAL_MODEL || secrets.SL_AVAL_MODEL || 'gpt-4.1' }}
+          PK: ${{ secrets.SC_AI_KEY || secrets.SL_AI_KEY }}
+          PM: ${{ secrets.SC_AI_MODEL || secrets.SL_AI_MODEL || 'openai-large' }}
+        run: |
+          mkdir -p /tmp/kt
+          t() { # name url key model
+            if [ -z "$3" ]; then echo "$1: NO_KEY" >> /tmp/kt/result.txt; return; fi
+            body=$(printf '{"model":"%s","messages":[{"role":"user","content":"فقط بنویس: آماده"}],"max_tokens":3000}' "$4")
+            code=$(curl -s -m 90 -o /tmp/kt/$1.json -w "%{http_code}" "$2/chat/completions" -H "Authorization: Bearer $3" -H "Content-Type: application/json" -d "$body")
+            ans=$(python3 -c "import json;print(json.load(open('/tmp/kt/$1.json'))['choices'][0]['message']['content'][:60])" 2>/dev/null || head -c 300 /tmp/kt/$1.json)
+            echo "$1: HTTP $code (key length ${#3}, model $4) -> $ans" >> /tmp/kt/result.txt
+          }
+          t aval https://api.avalai.ir/v1 "$AK" "$AM"
+          t pollinations https://gen.pollinations.ai/v1 "$PK" "$PM"
+          cat /tmp/kt/result.txt
+          cd /tmp/kt && rm -f *.json && git init -q -b sc-keytest && git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add -A && git commit -qm "key test ${GITHUB_SHA}" && git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" sc-keytest || true
+
       - name: Build
         env:
           SC_AI_URL: ${{ secrets.SC_AI_URL || secrets.SL_AI_URL }}
